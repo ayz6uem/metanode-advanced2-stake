@@ -19,7 +19,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
 
     constructor() {
         // 禁用初始化器，防止代理合约的构造函数执行逻辑合约的构造函数
-        _disableInitializers();
+        // _disableInitializers();
     }
 
     /**
@@ -99,9 +99,10 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
     uint256 public startBlock;               // 奖励开始计算的区块号
 
     // 暂停开关
-    bool public stakePaused;     // 质押/解除质押是否暂停
-    bool public withdrawPaused;  // 提取是否暂停
-    bool public claimPaused;      // 领取奖励是否暂停
+    // bool public stakePaused;     // 质押/解除质押是否暂停
+    // bool public withdrawPaused;  // 提取是否暂停
+    // bool public claimPaused;      // 领取奖励是否暂停
+    uint8 public pausedConfig; // 0-未暂停 1-质押暂停 2-提现暂停 4-领取奖励暂停
 
     // 映射变量
     mapping(address => bool) public tokens;                                        // 代币是否支持质押
@@ -205,7 +206,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
      * @param amount 质押数量（ETH时需要与msg.value匹配）
      */
     function stake(address tokenAddress, uint256 amount) public payable checkToken(tokenAddress) whenNotPaused nonReentrant {
-        require(!stakePaused, "stake/unstake pausing");
+        require(pausedConfig & 1 != 1, "stake/unstake pausing");
 
         uint256 pid = tokenPools[tokenAddress];
         Pool storage pool = pools[pid];
@@ -248,7 +249,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
         address tokenAddress, uint256 _amount
         ) public whenNotPaused checkToken(tokenAddress) nonReentrant {
         require(_amount > 0, "amount error");
-        require(!stakePaused, "stake/unstake pausing");
+        require(pausedConfig & 1 != 1, "stake/unstake pausing");
 
         Staker storage staker = stakers[tokenAddress][msg.sender];
         require(staker.stakeAmount >= _amount, "amount error");
@@ -286,7 +287,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
      * @param tokenAddress 代币地址
      */
     function withdraw(address tokenAddress) external whenNotPaused nonReentrant checkToken(tokenAddress) {
-        require(!withdrawPaused, "withdraw pausing");
+        require(pausedConfig & 2 != 2, "withdraw pausing");
 
         Staker storage staker = stakers[tokenAddress][msg.sender];
         uint256 amount = 0;
@@ -320,7 +321,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
      * @param tokenAddress 代币地址
      */
     function claim(address tokenAddress) public whenNotPaused nonReentrant checkToken(tokenAddress) {
-        require(!claimPaused, "claim pausing");
+        require(pausedConfig & 4 != 4, "claim pausing");
 
         Staker storage staker = stakers[tokenAddress][msg.sender];
         uint256 pid = tokenPools[tokenAddress];
@@ -372,26 +373,9 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
     }
 
     /**
-     * @dev 设置质押/解除质押暂停状态
-     * @param _stakePaused 是否暂停质押操作
+     * @dev 设置暂停状态
      */
-    function setStakePaused(bool _stakePaused) external onlyRole(ADMIN_ROLE) {
-        stakePaused = _stakePaused;
-    }
-
-    /**
-     * @dev 设置提取暂停状态
-     * @param _withdrawPaused 是否暂停提取操作
-     */
-    function setWithdrawPaused(bool _withdrawPaused) external onlyRole(ADMIN_ROLE) {
-        withdrawPaused = _withdrawPaused;
-    }
-
-    /**
-     * @dev 设置领取奖励暂停状态
-     * @param _claimPaused 是否暂停领取奖励操作
-     */
-    function setClaimPaused(bool _claimPaused) external onlyRole(ADMIN_ROLE) {
-        claimPaused = _claimPaused;
+    function setPausedConfig(uint8 _pausedConfig) external onlyRole(ADMIN_ROLE) {
+        pausedConfig = _pausedConfig;
     }
 }
