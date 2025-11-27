@@ -19,7 +19,7 @@ contract DuggeeStake is Initializable, AccessControlUpgradeable, UUPSUpgradeable
 
     constructor() {
         // 禁用初始化器，防止代理合约的构造函数执行逻辑合约的构造函数
-        // _disableInitializers();
+        _disableInitializers();
     }
 
     /**
