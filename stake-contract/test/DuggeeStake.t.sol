@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {console} from "forge-std/console.sol";
 import {DuggeeToken} from "../src/DuggeeToken.sol";
 import {DuggeeStake} from "../src/DuggeeStake.sol";
@@ -17,8 +16,8 @@ contract DuggeeStakeTest is Test {
     function setUp() public {
         token = new DuggeeToken();
         stake = new DuggeeStake();
-        stake.initialize(address(token));
-        token.transfer(address(stake), 10000000 ether);
+        stake.initialize(address(this), address(token));
+        token.mint(address(stake), 10000000 ether);
 
         vm.deal(staker1, 100 ether);
         vm.deal(staker2, 100 ether);
